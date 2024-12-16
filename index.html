@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kalkulator usług akademickich | Tłumaczenia i korekta</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <style>
+        .bg-academic {
+            background-color: #f8f9fa;
+        }
+        .card {
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .price-feature {
+            color: #0d6efd;
+            font-weight: 600;
+        }
+        .language-pair {
+            border-left: 3px solid #0d6efd;
+            padding-left: 1rem;
+        }
+        .service-selector {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+    </style>
+</head>
+<body class="bg-academic">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-white">
+                        <h2 class="text-center mb-0">Kalkulator usług akademickich</h2>
+                        <p class="text-center text-muted mt-2 mb-0">Tłumaczenia i korekta tekstów naukowych</p>
+                    </div>
+                    
+                    <div class="card-body">
+                        <div class="service-selector">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="serviceType" id="translation" value="translation" checked>
+                                <label class="form-check-label" for="translation">
+                                    Tłumaczenie (80 PLN / 250 wyrazów)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="serviceType" id="proofreading" value="proofreading">
+                                <label class="form-check-label" for="proofreading">
+                                    Korekta językowa (40 PLN / jednostkę)
+                                </label>
+                            </div>
+                        </div>
+
+                        <form id="calculatorForm" hx-post="/calculate" hx-target="#results" hx-swap="innerHTML">
+                            <div class="mb-4">
+                                <label for="wordCount" class="form-label">Liczba wyrazów w tekście źródłowym</label>
+                                <input 
+                                    type="number" 
+                                    class="form-control" 
+                                    id="wordCount" 
+                                    name="wordCount"
+                                    placeholder="Wprowadź liczbę wyrazów"
+                                    required
+                                >
+                                <div class="form-text">Minimalna liczba wyrazów do wyceny: 250</div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="expressService" name="express">
+                                    <label class="form-check-label" for="expressService">
+                                        Usługa ekspresowa (+50%)
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Oblicz koszt</button>
+                        </form>
+
+                        <div id="error" class="alert alert-danger mt-3" style="display: none;"></div>
+
+                        <div id="results" class="mt-4"></div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Informacje o usługach</h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="mb-2">Tłumaczenie</h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">✓ Tłumaczenie specjalistyczne</li>
+                                    <li class="mb-2">✓ Terminologia akademicka</li>
+                                    <li>✓ Format zgodny z wymogami</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="mb-2">Korekta</h6>
+                                <ul class="list-unstyled">
+                                    <li class="mb-2">✓ Native speaker</li>
+                                    <li class="mb-2">✓ Styl akademicki</li>
+                                    <li>✓ Sugestie ulepszeń</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelectorAll('input[name="serviceType"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                const translationOptions = document.getElementById('translationOptions');
+                translationOptions.style.display = this.value === 'translation' ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('calculatorForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const errorDiv = document.getElementById('error');
+            const resultsDiv = document.getElementById('results');
+            errorDiv.style.display = 'none';
+            
+            const wordCount = parseInt(document.getElementById('wordCount').value);
+            if (isNaN(wordCount) || wordCount < 0) {
+                errorDiv.textContent = 'Proszę wprowadzić poprawną liczbę wyrazów.';
+                errorDiv.style.display = 'block';
+                resultsDiv.innerHTML = '';
+                return;
+            }
+
+            const serviceType = document.querySelector('input[name="serviceType"]:checked').value;
+            const baseRate = serviceType === 'translation' ? 80 : 40;
+            const sets = Math.ceil(wordCount / 250);
+            let totalCost = sets * baseRate;
+
+            const isExpress = document.getElementById('expressService').checked;
+            if (isExpress) totalCost *= 1.5;
+
+            const serviceTypeText = serviceType === 'translation' ? 'Tłumaczenie' : 'Korekta językowa';
+
+            resultsDiv.innerHTML = `
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h5 class="card-title">Zestawienie kalkulacyjne:</h5>
+                        <div class="table-responsive">
+                            <table class="table table-borderless mb-0">
+                                <tbody>
+                                    <tr>
+                                        <td>Typ usługi:</td>
+                                        <td class="text-end">${serviceTypeText}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Liczba wyrazów:</td>
+                                        <td class="text-end">${wordCount}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Liczba jednostek (po 250 wyrazów):</td>
+                                        <td class="text-end">${sets}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Stawka za jednostkę:</td>
+                                        <td class="text-end">${baseRate} PLN</td>
+                                    </tr>
+                                    ${isExpress ? `
+                                    <tr>
+                                        <td>Usługa ekspresowa:</td>
+                                        <td class="text-end">+50%</td>
+                                    </tr>
+                                    ` : ''}
+                                    <tr class="table-primary">
+                                        <td class="fw-bold">Całkowity koszt:</td>
+                                        <td class="text-end fw-bold">${totalCost.toFixed(2)} PLN</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    </script>
+</body>
+</html>
